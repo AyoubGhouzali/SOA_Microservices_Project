@@ -42,6 +42,8 @@ public class RegisterUserUseCase {
         user.setRole(UserRole.PASSENGER);
         user.setStatus(UserStatus.ACTIVE);
         user.setCreatedAt(LocalDateTime.now());
+
+        user.activate();
         
         User savedUser = userRepository.save(user);
         return UserResponse.fromDomain(savedUser);
