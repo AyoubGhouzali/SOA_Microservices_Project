@@ -13,13 +13,31 @@ public class User {
     private UserStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
+
+
+    public User() {
+        this.id = UUID.randomUUID();
+        this.createdAt = LocalDateTime.now();
+        this.status = UserStatus.PENDING;
+    }
     
     // Business methods
     public void activate() {
-        if (this.status != UserStatus.PENDING) {
-            throw new IllegalStateException("Can only activate pending users");
+        if (this.status == UserStatus.ACTIVE) {
+            throw new IllegalStateException("User is Already active");
         }
         this.status = UserStatus.ACTIVE;
+    }
+
+    public boolean isActive() {
+        return this.status == UserStatus.ACTIVE;
+    }
+
+    public void recordLogin() {
+        if (!isActive()) {
+            throw new IllegalStateException("Inactive user cannot login");
+        }
+        this.lastLoginAt = LocalDateTime.now();
     }
     
     public void suspend() {
@@ -31,9 +49,7 @@ public class User {
                (this.role == UserRole.PASSENGER || this.role == UserRole.ADMIN);
     }
     
-    public void recordLogin() {
-        this.lastLoginAt = LocalDateTime.now();
-    }
+
     
     // Getters and setters
     public UUID getId() { return id; }
@@ -64,10 +80,3 @@ public class User {
     public void setLastLoginAt(LocalDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
 }
 
-enum UserRole {
-    PASSENGER, DRIVER, ADMIN
-}
-
-enum UserStatus {
-    PENDING, ACTIVE, SUSPENDED
-}
