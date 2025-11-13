@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    # Use environment variable for connection string
+    url: ${SUPABASE_TICKETING_DB_URL}
+    username: ${SUPABASE_DB_USERNAME}
+    password: ${SUPABASE_DB_PASSWORD}
+    
+    hikari:
+      maximum-pool-size: 5  # Supabase free tier limit
+      minimum-idle: 2
+      connection-timeout: 30000
+
+logging:
+  level:
+    com.transport.ticketing: INFO  # Less verbose in cloud
+    org.hibernate.SQL: INFO

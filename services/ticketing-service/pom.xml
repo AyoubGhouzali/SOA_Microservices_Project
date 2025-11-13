@@ -11,8 +11,8 @@
 	<groupId>com.transport</groupId>
 	<artifactId>ticketing-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>demo</name>
-	<description>Demo project for Spring Boot</description>
+	<name>ticketing-service</name>
+	<description>Ticketing Service for Urban Transport System</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -52,6 +52,14 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- Lombok (optional - reduces boilerplate) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
