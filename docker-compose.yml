@@ -2,9 +2,159 @@ version: '3.8'
 
 services:
   # ============================================
+  # USER SERVICE DATABASE
+  # ============================================
+  user-postgres:
+    image: postgres:15-alpine
+    container_name: user-postgres
+    environment:
+      POSTGRES_USER: user_admin
+      POSTGRES_PASSWORD: user_pass_123
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - user-postgres-data:/var/lib/postgresql/data
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_admin -d user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # TICKETING SERVICE DATABASE
+  # ============================================
+  ticketing-postgres:
+    image: postgres:15-alpine
+    container_name: ticketing-postgres
+    environment:
+      POSTGRES_USER: ticket_admin
+      POSTGRES_PASSWORD: ticket_pass_123
+      POSTGRES_DB: ticketing_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - ticketing-postgres-data:/var/lib/postgresql/data
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticket_admin -d ticketing_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # PAYMENT SERVICE DATABASE
+  # ============================================
+  payment-postgres:
+    image: postgres:15-alpine
+    container_name: payment-postgres
+    environment:
+      POSTGRES_USER: payment_admin
+      POSTGRES_PASSWORD: payment_pass_123
+      POSTGRES_DB: payment_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_admin -d payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # SUBSCRIPTION SERVICE DATABASE
+  # ============================================
+  subscription-postgres:
+    image: postgres:15-alpine
+    container_name: subscription-postgres
+    environment:
+      POSTGRES_USER: sub_admin
+      POSTGRES_PASSWORD: sub_pass_123
+      POSTGRES_DB: subscription_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - subscription-postgres-data:/var/lib/postgresql/data
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sub_admin -d subscription_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # SCHEDULING SERVICE DATABASE
+  # ============================================
+  scheduling-postgres:
+    image: postgres:15-alpine
+    container_name: scheduling-postgres
+    environment:
+      POSTGRES_USER: schedule_admin
+      POSTGRES_PASSWORD: schedule_pass_123
+      POSTGRES_DB: scheduling_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - scheduling-postgres-data:/var/lib/postgresql/data
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U schedule_admin -d scheduling_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # TRACKING SERVICE - MongoDB
+  # ============================================
+  tracking-mongodb:
+    image: mongo:7  # Changed from mongo:6-alpine
+    container_name: tracking-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: tracking_admin
+      MONGO_INITDB_ROOT_PASSWORD: tracking_pass_123
+      MONGO_INITDB_DATABASE: tracking_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - tracking-mongodb-data:/data/db
+    networks:
+      - transport-network
+    restart: unless-stopped
+
+  # ============================================
+  # NOTIFICATION SERVICE - MongoDB
+  # ============================================
+  notification-mongodb:
+    image: mongo:7  # Changed from mongo:6-alpine
+    container_name: notification-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: notif_admin
+      MONGO_INITDB_ROOT_PASSWORD: notif_pass_123
+      MONGO_INITDB_DATABASE: notification_db
+    ports:
+      - "27018:27017"
+    volumes:
+      - notification-mongodb-data:/data/db
+    networks:
+      - transport-network
+    restart: unless-stopped
+
+  # ============================================
   # MESSAGE BROKER - Apache Kafka
   # ============================================
-  
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: transport-zookeeper
@@ -24,7 +174,7 @@ services:
     image: confluentinc/cp-kafka:7.4.0
     container_name: transport-kafka
     depends_on:
-    - zookeeper
+      - zookeeper
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -38,11 +188,11 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      volumes:
+    volumes:
       - kafka-data:/var/lib/kafka/data
-      networks:
+    networks:
       - transport-network
-      restart: unless-stopped
+    restart: unless-stopped
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -50,46 +200,11 @@ services:
     depends_on:
       - kafka
     ports:
-      -"8090:8080"
+      - "8090:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-    networks:
-      - transport-network
-    restart: unless-stopped   
-  # ============================================
-  # MONGODB - For Tracking & Notification Services
-  # ============================================
-  mongodb:
-    image: mongo:6
-    container_name: transport-mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo
-      MONGO_INITDB_ROOT_PASSWORD: mongo123
-      MONGO_INITDB_DATABASE: admin
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-      - mongodb-config:/data/configdb
-    networks:
-      - transport-network
-    restart: unless-stopped
-
-  mongo-express:
-    image: mongo-express:latest
-    container_name: transport-mongo-express
-    depends_on:
-      - mongodb
-    ports:
-      - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: mongo
-      ME_CONFIG_MONGODB_ADMINPASSWORD: mongo123
-      ME_CONFIG_MONGODB_URL: mongodb://mongo:mongo123@mongodb:27017/
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin123
     networks:
       - transport-network
     restart: unless-stopped
@@ -122,29 +237,83 @@ services:
       - transport-network
     restart: unless-stopped
 
+  # ============================================
+  # DATABASE ADMIN UIs
+  # ============================================
+  
+  # pgAdmin - PostgreSQL Admin (All DBs)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: transport-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@transport.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - transport-network
+    restart: unless-stopped
+
+  # MongoDB Express
+  mongo-express:
+    image: mongo-express:latest
+    container_name: transport-mongo-express
+    depends_on:
+      - tracking-mongodb
+      - notification-mongodb
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: tracking_admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: tracking_pass_123
+      ME_CONFIG_MONGODB_URL: mongodb://tracking_admin:tracking_pass_123@tracking-mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    networks:
+      - transport-network
+    restart: unless-stopped
+
 # ============================================
 # NETWORKS
 # ============================================
-
 networks:
   transport-network:
     driver: bridge
     name: transport-network
 
 # ============================================
-# VOLUMES (Persistent Data)
+# VOLUMES
 # ============================================
-
 volumes:
+  # PostgreSQL volumes
+  user-postgres-data:
+    name: user-postgres-data
+  ticketing-postgres-data:
+    name: ticketing-postgres-data
+  payment-postgres-data:
+    name: payment-postgres-data
+  subscription-postgres-data:
+    name: subscription-postgres-data
+  scheduling-postgres-data:
+    name: scheduling-postgres-data
+  
+  # MongoDB volumes
+  tracking-mongodb-data:
+    name: tracking-mongodb-data
+  notification-mongodb-data:
+    name: notification-mongodb-data
+  
+  # Infrastructure volumes
   zookeeper-data:
     name: transport-zookeeper-data
   zookeeper-logs:
     name: transport-zookeeper-logs
   kafka-data:
     name: transport-kafka-data
-  mongodb-data:
-    name: transport-mongodb-data
-  mongodb-config:
-    name: transport-mongodb-config
   redis-data:
     name: transport-redis-data
+  pgadmin-data:
+    name: transport-pgadmin-data
