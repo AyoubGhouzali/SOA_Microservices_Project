@@ -9,8 +9,9 @@ services:
     container_name: user-postgres
     environment:
       POSTGRES_USER: user_admin
-      POSTGRES_PASSWORD: user_pass_123
+      POSTGRES_PASSWORD: password123
       POSTGRES_DB: user_db
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
@@ -22,6 +23,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # USER SERVICE APPLICATION
+  # ============================================
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - transport-network
     restart: unless-stopped
 
   # ============================================
@@ -45,6 +65,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # TICKETING SERVICE APPLICATION
+  # ============================================
+  ticketing-service:
+    build:
+      context: ./services/ticketing-service
+      dockerfile: Dockerfile
+    container_name: ticketing-service
+    depends_on:
+      ticketing-postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    networks:
+      - transport-network
     restart: unless-stopped
 
   # ============================================

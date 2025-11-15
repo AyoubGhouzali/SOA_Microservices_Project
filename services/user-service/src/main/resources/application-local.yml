@@ -1,11 +1,8 @@
-server:
-  port: 8082
-
 spring:
   datasource:
-    url: jdbc:postgresql://ticketing-postgres:5432/ticketing_db
-    username: ticket_admin
-    password: ticket_pass_123
+    url: jdbc:postgresql://user-postgres:5432/user_db
+    username: user_admin
+    password: password123
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,5 +17,5 @@ spring:
 
 logging:
   level:
-    com.transport.ticketing: DEBUG
+    com.transport.user: DEBUG
     org.hibernate.SQL: DEBUG
