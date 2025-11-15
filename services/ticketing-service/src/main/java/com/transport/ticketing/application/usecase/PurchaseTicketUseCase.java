@@ -7,6 +7,8 @@ import com.transport.ticketing.domain.event.TicketPurchasedEvent;
 import com.transport.ticketing.domain.model.Ticket;
 import com.transport.ticketing.domain.repository.TicketRepository;
 import com.transport.ticketing.domain.service.PricingService;
+import com.transport.ticketing.infrastructure.event.KafkaEventPublisher;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,12 +37,14 @@ public class PurchaseTicketUseCase {
     
     private final TicketRepository ticketRepository;
     private final PricingService pricingService;
-    // We'll inject EventPublisher later when we add Kafka
+    private final KafkaEventPublisher eventPublisher;
     
     public PurchaseTicketUseCase(TicketRepository ticketRepository,
-                                  PricingService pricingService) {
+                                  PricingService pricingService,
+                                  KafkaEventPublisher eventPublisher) {
         this.ticketRepository = ticketRepository;
         this.pricingService = pricingService;
+        this.eventPublisher = eventPublisher;
     }
     
     /**
@@ -142,8 +146,19 @@ public class PurchaseTicketUseCase {
      * Placeholder - we'll implement Kafka in next step
      */
     private void publishTicketPurchasedEvent(Ticket ticket, UUID orderId, 
-                                            BigDecimal totalAmount) {
-        // TODO: Implement Kafka publishing
-        logger.info("TODO: Publish TicketPurchasedEvent for order: {}", orderId);
-    }
+                                        BigDecimal totalAmount) {
+    // Create event
+    TicketPurchasedEvent event = new TicketPurchasedEvent();
+    event.setTicketId(ticket.getId());
+    event.setUserId(ticket.getUserId());
+    event.setOrderId(orderId);
+    event.setTicketType(ticket.getType().name());
+    event.setAmount(totalAmount);
+    event.setCurrency(ticket.getCurrency());
+    
+    // Publish to Kafka
+    eventPublisher.publishTicketPurchased(event);
+    
+    logger.info("Published TicketPurchasedEvent for order: {}", orderId);
+}
 }
