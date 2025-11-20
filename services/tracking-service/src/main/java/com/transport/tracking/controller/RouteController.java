@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
  * Utilise Google Maps et OpenStreetMap
  */
 @RestController
-@RequestMapping("/api/routes")
+@RequestMapping("/api/routesBus")
 @CrossOrigin(origins = "*")
 public class RouteController {
 

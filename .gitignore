@@ -38,3 +38,4 @@ logs/
 *.class
 *.jar
 *.war
+services/subscription-service/src/main/resources/application.properties
