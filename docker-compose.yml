@@ -323,7 +323,62 @@ services:
       - transport-network
     restart: unless-stopped
 
-  
+  # ============================================
+  # NOTIFICATION SERVICE - MongoDB
+  # ============================================
+  notification-mongodb:
+    image: mongo:7
+    container_name: notification-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: notification_admin
+      MONGO_INITDB_ROOT_PASSWORD: notification_pass_123
+      MONGO_INITDB_DATABASE: notification_db
+    ports:
+      - "27018:27017"
+    volumes:
+      - notification-mongodb-data:/data/db
+    networks:
+      - transport-network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      notification-mongodb:
+        condition: service_started
+      kafka:
+        condition: service_started
+    ports:
+      - "8095:8095"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_DATA_MONGODB_URI: mongodb://notification_admin:notification_pass_123@notification-mongodb:27017/notification_db?authSource=admin
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      # Email configuration (use your SMTP server)
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@transport.com}
+      EMAIL_NOTIFICATIONS_ENABLED: ${EMAIL_NOTIFICATIONS_ENABLED:-true}
+      # SMS configuration (Twilio)
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+      SMS_NOTIFICATIONS_ENABLED: ${SMS_NOTIFICATIONS_ENABLED:-false}
+    networks:
+      - transport-network
+    restart: unless-stopped
+
+
 
   # ============================================
   # KAFKA & ZOOKEEPER - Message Broker
@@ -472,7 +527,9 @@ volumes:
   # MongoDB volumes
   tracking-mongodb-data:
     name: tracking-mongodb-data
-  
+  notification-mongodb-data:
+    name: notification-mongodb-data
+
   # Infrastructure volumes
   zookeeper-data:
     name: transport-zookeeper-data
