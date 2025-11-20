@@ -10,13 +10,15 @@ spring:
     config:
       server:
         native:
-          search-locations: classpath:/configurations
+          search-locations:
+            - classpath:/configurations
+            - classpath:/configurations/
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: "*"
   endpoint:
     health:
       show-details: always

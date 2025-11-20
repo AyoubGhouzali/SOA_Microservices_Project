@@ -1,27 +1,24 @@
-# Build stage
-FROM maven:3.9-eclipse-temurin-21-alpine AS build
-WORKDIR /app
+##-- Stage 1 build: Maven/JDK base img --##
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
-# Copy pom.xml and download dependencies
+WORKDIR /app
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline -B
 
-# Copy source code and build
+RUN mvn dependency:go-offline
+
 COPY src ./src
-RUN ./mvnw clean package -DskipTests
 
-# Run stage
-FROM eclipse-temurin:21-jre-alpine
+RUN mvn clean package -DskipTests
+
+
+##-- Stage 2: JRE Runtime image --##
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Copy the built jar from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose port
-EXPOSE 8082
+ENV SPRING_PROFILES_ACTIVE=default
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
-# Run the application
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

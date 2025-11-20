@@ -1,8 +1,77 @@
-version: '3.8'
 
 services:
   # ============================================
-  # USER SERVICE DATABASE
+  # CONFIG SERVER - Configuration centralisée
+  # ============================================
+  config-server:
+    build:
+      context: ./services/ConfigServer
+      dockerfile: Dockerfile
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # DISCOVERY SERVER - Eureka Service Registry
+  # ============================================
+  discovery-server:
+    build:
+      context: ./services/DiscoveryServer
+      dockerfile: Dockerfile
+    container_name: discovery-server
+    depends_on:
+      config-server:
+        condition: service_healthy
+    ports:
+      - "8761:8761"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_ADDRESS: http://discovery-server:8761/eureka
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # API GATEWAY
+  # ============================================
+  api-gateway:
+    build:
+      context: ./services/apiGateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    ports:
+      - "8222:8222"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    networks:
+      - transport-network
+    restart: unless-stopped
+
+  # ============================================
+  # USER SERVICE
   # ============================================
   user-postgres:
     image: postgres:15-alpine
@@ -11,7 +80,6 @@ services:
       POSTGRES_USER: user_admin
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: user_db
-      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
@@ -25,27 +93,37 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ============================================
-  # USER SERVICE APPLICATION
-  # ============================================
   user-service:
     build:
       context: ./services/user-service
       dockerfile: Dockerfile
     container_name: user-service
     depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
       user-postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
     ports:
       - "8081:8081"
     environment:
-      SPRING_PROFILES_ACTIVE: local
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-postgres:5432/user_db
+      SPRING_DATASOURCE_USERNAME: user_admin
+      SPRING_DATASOURCE_PASSWORD: password123
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
     networks:
       - transport-network
     restart: unless-stopped
 
   # ============================================
-  # TICKETING SERVICE DATABASE
+  # TICKETING SERVICE
   # ============================================
   ticketing-postgres:
     image: postgres:15-alpine
@@ -67,50 +145,37 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ============================================
-  # TICKETING SERVICE APPLICATION
-  # ============================================
   ticketing-service:
     build:
       context: ./services/ticketing-service
       dockerfile: Dockerfile
     container_name: ticketing-service
     depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
       ticketing-postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
     ports:
-      - "8082:8082"
+      - "8094:8094"
     environment:
-      SPRING_PROFILES_ACTIVE: local
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ticketing-postgres:5432/ticketing_db
+      SPRING_DATASOURCE_USERNAME: ticket_admin
+      SPRING_DATASOURCE_PASSWORD: ticket_pass_123
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
     networks:
       - transport-network
     restart: unless-stopped
-
+  
   # ============================================
-  # PAYMENT SERVICE DATABASE
-  # ============================================
-  payment-postgres:
-    image: postgres:15-alpine
-    container_name: payment-postgres
-    environment:
-      POSTGRES_USER: payment_admin
-      POSTGRES_PASSWORD: payment_pass_123
-      POSTGRES_DB: payment_db
-    ports:
-      - "5434:5432"
-    volumes:
-      - payment-postgres-data:/var/lib/postgresql/data
-    networks:
-      - transport-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U payment_admin -d payment_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  # ============================================
-  # SUBSCRIPTION SERVICE DATABASE
+  # SUBSCRIPTION SERVICE
   # ============================================
   subscription-postgres:
     image: postgres:15-alpine
@@ -132,8 +197,37 @@ services:
       retries: 5
     restart: unless-stopped
 
+  subscription-service:
+    build:
+      context: ./services/subscription-service
+      dockerfile: Dockerfile
+    container_name: subscription-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      subscription-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8093:8093"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://subscription-postgres:5432/subscription_db
+      SPRING_DATASOURCE_USERNAME: sub_admin
+      SPRING_DATASOURCE_PASSWORD: sub_pass_123
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    networks:
+      - transport-network
+    restart: unless-stopped
+
   # ============================================
-  # SCHEDULING SERVICE DATABASE
+  # SCHEDULING SERVICE
   # ============================================
   scheduling-postgres:
     image: postgres:15-alpine
@@ -155,11 +249,40 @@ services:
       retries: 5
     restart: unless-stopped
 
+  scheduling-service:
+    build:
+      context: ./services/scheduling-service
+      dockerfile: Dockerfile
+    container_name: scheduling-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      scheduling-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8091:8091"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://scheduling-postgres:5432/scheduling_db
+      SPRING_DATASOURCE_USERNAME: schedule_admin
+      SPRING_DATASOURCE_PASSWORD: schedule_pass_123
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    networks:
+      - transport-network
+    restart: unless-stopped
+
   # ============================================
   # TRACKING SERVICE - MongoDB
   # ============================================
   tracking-mongodb:
-    image: mongo:7  # Changed from mongo:6-alpine
+    image: mongo:7
     container_name: tracking-mongodb
     environment:
       MONGO_INITDB_ROOT_USERNAME: tracking_admin
@@ -173,26 +296,37 @@ services:
       - transport-network
     restart: unless-stopped
 
-  # ============================================
-  # NOTIFICATION SERVICE - MongoDB
-  # ============================================
-  notification-mongodb:
-    image: mongo:7  # Changed from mongo:6-alpine
-    container_name: notification-mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: notif_admin
-      MONGO_INITDB_ROOT_PASSWORD: notif_pass_123
-      MONGO_INITDB_DATABASE: notification_db
+  tracking-service:
+    build:
+      context: ./services/tracking-service
+      dockerfile: Dockerfile
+    container_name: tracking-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      tracking-mongodb:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
-      - "27018:27017"
-    volumes:
-      - notification-mongodb-data:/data/db
+      - "8092:8092"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      SPRING_DATA_MONGODB_URI: mongodb://tracking_admin:tracking_pass_123@tracking-mongodb:27017/tracking_db?authSource=admin
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
     networks:
       - transport-network
     restart: unless-stopped
 
+  
+
   # ============================================
-  # MESSAGE BROKER - Apache Kafka
+  # KAFKA & ZOOKEEPER - Message Broker
   # ============================================
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -279,8 +413,6 @@ services:
   # ============================================
   # DATABASE ADMIN UIs
   # ============================================
-  
-  # pgAdmin - PostgreSQL Admin (All DBs)
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: transport-pgadmin
@@ -296,15 +428,13 @@ services:
       - transport-network
     restart: unless-stopped
 
-  # MongoDB Express
   mongo-express:
     image: mongo-express:latest
     container_name: transport-mongo-express
     depends_on:
       - tracking-mongodb
-      - notification-mongodb
     ports:
-      - "8081:8081"
+      - "8083:8081"
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: tracking_admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: tracking_pass_123
@@ -342,8 +472,6 @@ volumes:
   # MongoDB volumes
   tracking-mongodb-data:
     name: tracking-mongodb-data
-  notification-mongodb-data:
-    name: notification-mongodb-data
   
   # Infrastructure volumes
   zookeeper-data:

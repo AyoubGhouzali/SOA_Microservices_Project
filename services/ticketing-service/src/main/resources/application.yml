@@ -1,12 +1,13 @@
 spring:
   application:
-    name: ticketing-service
-  
+    name: TICKETING-SERVICE
   datasource:
     url: ${TICKETING_DB_URL}
     username: ${TICKETING_DB_USERNAME}
     password: ${TICKETING_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  config:
+    import: configserver:${CONFIG_SERVER_URL}
 
 kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -21,3 +22,16 @@ kafka:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
