@@ -1,0 +1,140 @@
+# ============================================
+# NOTIFICATION SERVICE - Configuration
+# ============================================
+
+server:
+  port: 8095
+
+spring:
+  application:
+    name: notification-service
+
+  # ============================================
+  # CONFIG SERVER - Configuration centralisée
+  # ============================================
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+
+  # ============================================
+  # MONGODB - Stockage historique notifications
+  # ============================================
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://notification_admin:notification_pass_123@localhost:27018/notification_db?authSource=admin}
+      auto-index-creation: true
+
+  # ============================================
+  # KAFKA - Message Broker
+  # ============================================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    consumer:
+      # Groupe de consommateurs (important pour le scaling)
+      group-id: notification-service-group
+
+      # Désérialisation
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+      # Lire depuis le début si nouveau consumer
+      auto-offset-reset: earliest
+
+      # Auto-commit des offsets
+      enable-auto-commit: true
+      auto-commit-interval: 1000
+
+      # Configuration JSON
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: busEvent:com.transport.notification.dto.BusEventNotification
+
+  # ============================================
+  # EMAIL - Configuration SMTP
+  # ============================================
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    from: ${SMTP_FROM:noreply@transport.com}
+
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# ============================================
+# EUREKA - Service Discovery
+# ============================================
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+# ============================================
+# ACTUATOR - Health & Monitoring
+# ============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,kafka
+  endpoint:
+    health:
+      show-details: always
+  health:
+    kafka:
+      enabled: true
+    mongo:
+      enabled: true
+
+# ============================================
+# TWILIO - SMS Service
+# ============================================
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  phone-number: ${TWILIO_PHONE_NUMBER:}
+
+# ============================================
+# NOTIFICATION - Custom Settings
+# ============================================
+notification:
+  email:
+    enabled: ${EMAIL_NOTIFICATIONS_ENABLED:true}
+  sms:
+    enabled: ${SMS_NOTIFICATIONS_ENABLED:false}
+
+  # Retry configuration
+  retry:
+    max-attempts: 3
+    backoff-delay: 2000
+
+  # Rate limiting
+  rate-limit:
+    emails-per-minute: 60
+    sms-per-minute: 10
+
+# ============================================
+# LOGGING
+# ============================================
+logging:
+  level:
+    root: INFO
+    com.transport.notification: DEBUG
+    org.springframework.kafka: INFO
+    org.apache.kafka: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
