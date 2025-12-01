@@ -173,7 +173,57 @@ services:
     networks:
       - transport-network
     restart: unless-stopped
-  
+
+  # ============================================
+  # PAYMENT SERVICE
+  # ============================================
+  payment-postgres:
+    image: postgres:15-alpine
+    container_name: payment-postgres
+    environment:
+      POSTGRES_USER: payment_admin
+      POSTGRES_PASSWORD: payment_pass_123
+      POSTGRES_DB: payment_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+    networks:
+      - transport-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_admin -d payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      payment-postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    ports:
+      - "8087:8087"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka
+      PAYMENT_DB_URL: jdbc:postgresql://payment-postgres:5432/payment_db
+      PAYMENT_DB_USERNAME: payment_admin
+      PAYMENT_DB_PASSWORD: payment_pass_123
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+    networks:
+      - transport-network
+    restart: unless-stopped
+
   # ============================================
   # SUBSCRIPTION SERVICE
   # ============================================

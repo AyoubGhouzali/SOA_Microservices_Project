@@ -26,6 +26,11 @@ spring:
 server:
   port: 8081
 
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLongForHS256Algorithm}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+
 logging:
   level:
     com.transport.user: DEBUG

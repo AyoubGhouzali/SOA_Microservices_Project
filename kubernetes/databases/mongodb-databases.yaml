@@ -1,0 +1,121 @@
+# Tracking MongoDB Database
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-mongodb
+  namespace: transport-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracking-mongodb
+  template:
+    metadata:
+      labels:
+        app: tracking-mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "tracking_admin"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secrets
+              key: tracking-mongodb-password
+        - name: MONGO_INITDB_DATABASE
+          value: "tracking_db"
+        volumeMounts:
+        - name: mongodb-storage
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: mongodb-storage
+        persistentVolumeClaim:
+          claimName: tracking-mongodb-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracking-mongodb
+  namespace: transport-system
+spec:
+  selector:
+    app: tracking-mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017
+  type: ClusterIP
+
+---
+# Notification MongoDB Database
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-mongodb
+  namespace: transport-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-mongodb
+  template:
+    metadata:
+      labels:
+        app: notification-mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "notif_admin"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secrets
+              key: notification-mongodb-password
+        - name: MONGO_INITDB_DATABASE
+          value: "notification_db"
+        volumeMounts:
+        - name: mongodb-storage
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: mongodb-storage
+        persistentVolumeClaim:
+          claimName: notification-mongodb-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-mongodb
+  namespace: transport-system
+spec:
+  selector:
+    app: notification-mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017
+  type: ClusterIP

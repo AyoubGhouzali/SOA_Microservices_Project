@@ -265,7 +265,8 @@ public class SubscriptionService {
                 subscriptionRepository.save(subscription);
                 logger.info("Subscription {} renewed successfully", subscription.getId());
 
-                // TODO: Publier événement pour déclencher le paiement
+                // NOTE: Future enhancement - publish event to trigger payment for renewal
+                // For MVP, renewals are processed without payment gateway integration
                 // publishSubscriptionRenewedEvent(subscription);
 
             } catch (Exception e) {
