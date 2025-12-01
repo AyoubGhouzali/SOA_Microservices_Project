@@ -1,0 +1,14 @@
+# Bootstrap configuration - loaded before application.yml
+spring:
+  application:
+    name: notification-service
+  cloud:
+    config:
+      enabled: true
+      uri: ${CONFIG_SERVER_URL:http://localhost:8888}
+      fail-fast: false
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+        max-interval: 2000
+        multiplier: 1.1

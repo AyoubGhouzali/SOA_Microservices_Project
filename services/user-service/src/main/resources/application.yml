@@ -1,9 +1,9 @@
 spring:
   application:
-    name: user-service
+    name: USER-SERVICE
   
   profiles:
-    active: local  # Use local profile by default
+    active: native  # Use local profile by default
   
   datasource:
     url: ${USER_DB_URL:jdbc:postgresql://localhost:5432/user_db}
@@ -19,9 +19,26 @@ spring:
       hibernate:
         format_sql: true
 
+  config:
+    import: configserver:${CONFIG_SERVER_URL}
+
+
 server:
   port: 8081
 
 logging:
   level:
     com.transport.user: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
