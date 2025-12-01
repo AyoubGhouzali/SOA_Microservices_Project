@@ -269,7 +269,7 @@ services:
     depends_on:
       - redis
     ports:
-      - "8082:8081"
+      - "8083:8081"
     environment:
       REDIS_HOSTS: local:redis:6379:0:redis123
     networks:
@@ -304,7 +304,7 @@ services:
       - tracking-mongodb
       - notification-mongodb
     ports:
-      - "8081:8081"
+      - "8084:8081"
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: tracking_admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: tracking_pass_123
