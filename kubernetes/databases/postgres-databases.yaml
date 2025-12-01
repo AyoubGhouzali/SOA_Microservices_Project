@@ -1,0 +1,304 @@
+# User PostgreSQL Database
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-postgres
+  namespace: transport-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-postgres
+  template:
+    metadata:
+      labels:
+        app: user-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "user_admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: user-postgres-password
+        - name: POSTGRES_DB
+          value: "user_db"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: user-postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-postgres
+  namespace: transport-system
+spec:
+  selector:
+    app: user-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Ticketing PostgreSQL Database
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticketing-postgres
+  namespace: transport-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ticketing-postgres
+  template:
+    metadata:
+      labels:
+        app: ticketing-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "ticket_admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: ticketing-postgres-password
+        - name: POSTGRES_DB
+          value: "ticketing_db"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: ticketing-postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticketing-postgres
+  namespace: transport-system
+spec:
+  selector:
+    app: ticketing-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Payment PostgreSQL Database
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-postgres
+  namespace: transport-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-postgres
+  template:
+    metadata:
+      labels:
+        app: payment-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "payment_admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: payment-postgres-password
+        - name: POSTGRES_DB
+          value: "payment_db"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: payment-postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-postgres
+  namespace: transport-system
+spec:
+  selector:
+    app: payment-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Subscription PostgreSQL Database
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscription-postgres
+  namespace: transport-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: subscription-postgres
+  template:
+    metadata:
+      labels:
+        app: subscription-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "sub_admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: subscription-postgres-password
+        - name: POSTGRES_DB
+          value: "subscription_db"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: subscription-postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: subscription-postgres
+  namespace: transport-system
+spec:
+  selector:
+    app: subscription-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+# Scheduling PostgreSQL Database
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduling-postgres
+  namespace: transport-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduling-postgres
+  template:
+    metadata:
+      labels:
+        app: scheduling-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "scheduling_admin"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: scheduling-postgres-password
+        - name: POSTGRES_DB
+          value: "scheduling_db"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: scheduling-postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduling-postgres
+  namespace: transport-system
+spec:
+  selector:
+    app: scheduling-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP

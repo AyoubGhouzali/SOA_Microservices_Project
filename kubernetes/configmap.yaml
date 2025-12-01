@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transport-config
+  namespace: transport-system
+data:
+  # Eureka Configuration
+  EUREKA_DEFAULT_ZONE: "http://discovery-server:8761/eureka"
+  CONFIG_SERVER_URL: "http://config-server:8888"
+
+  # Kafka Configuration
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9093"
+
+  # Redis Configuration
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+
+  # Environment
+  ENVIRONMENT: "production"
+
+  # JWT Configuration
+  JWT_EXPIRATION: "86400000"  # 24 hours
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-config
+  namespace: transport-system
+data:
+  # PostgreSQL Configurations
+  USER_DB_URL: "jdbc:postgresql://user-postgres:5432/user_db"
+  USER_DB_USERNAME: "user_admin"
+
+  TICKETING_DB_URL: "jdbc:postgresql://ticketing-postgres:5432/ticketing_db"
+  TICKETING_DB_USERNAME: "ticket_admin"
+
+  PAYMENT_DB_URL: "jdbc:postgresql://payment-postgres:5432/payment_db"
+  PAYMENT_DB_USERNAME: "payment_admin"
+
+  SUBSCRIPTION_DB_URL: "jdbc:postgresql://subscription-postgres:5432/subscription_db"
+  SUBSCRIPTION_DB_USERNAME: "sub_admin"
+
+  SCHEDULING_DB_URL: "jdbc:postgresql://scheduling-postgres:5432/scheduling_db"
+  SCHEDULING_DB_USERNAME: "scheduling_admin"
+
+  # MongoDB Configurations
+  TRACKING_MONGODB_URI: "mongodb://tracking-admin:tracking_pass_123@tracking-mongodb:27017/tracking_db"
+  NOTIFICATION_MONGODB_URI: "mongodb://notif-admin:notif_pass_123@notification-mongodb:27017/notification_db"

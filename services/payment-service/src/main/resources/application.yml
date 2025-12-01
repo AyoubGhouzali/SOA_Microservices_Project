@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: payment-service
+  
+  datasource:
+    url: ${PAYMENT_DB_URL:jdbc:postgresql://localhost:5434/payment_db}
+    username: ${PAYMENT_DB_USERNAME:payment_admin}
+    password: ${PAYMENT_DB_PASSWORD:payment_pass_123}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: payment-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.transport.payment.event.TicketPurchasedEvent
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+server:
+  port: 8087
+
+logging:
+  level:
+    com.transport.payment: DEBUG
+    org.springframework.kafka: INFO

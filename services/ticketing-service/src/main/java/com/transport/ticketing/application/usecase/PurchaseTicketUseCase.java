@@ -93,8 +93,7 @@ public class PurchaseTicketUseCase {
                         savedTicket.getId(), savedTicket.getQrCode());
         }
         
-        // 4. TODO: Publish TicketPurchasedEvent to Kafka
-        // We'll add this in the next step when we implement Kafka
+        // 4. Publish TicketPurchasedEvent to Kafka for payment processing
         publishTicketPurchasedEvent(tickets.get(0), orderId, totalPrice);
         
         // 5. Build response

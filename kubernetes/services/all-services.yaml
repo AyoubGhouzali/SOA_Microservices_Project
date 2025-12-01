@@ -1,0 +1,211 @@
+# Subscription Service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscription-service
+  namespace: transport-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: subscription-service
+  template:
+    metadata:
+      labels:
+        app: subscription-service
+    spec:
+      containers:
+      - name: subscription-service
+        image: transport/subscription-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8093
+        envFrom:
+        - configMapRef:
+            name: transport-config
+        - configMapRef:
+            name: database-config
+        env:
+        - name: SUBSCRIPTION_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: transport-secrets
+              key: SUBSCRIPTION_DB_PASSWORD
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: subscription-service
+  namespace: transport-system
+spec:
+  selector:
+    app: subscription-service
+  ports:
+  - port: 8093
+    targetPort: 8093
+  type: ClusterIP
+
+---
+# Scheduling Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduling-service
+  namespace: transport-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: scheduling-service
+  template:
+    metadata:
+      labels:
+        app: scheduling-service
+    spec:
+      containers:
+      - name: scheduling-service
+        image: transport/scheduling-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8091
+        envFrom:
+        - configMapRef:
+            name: transport-config
+        - configMapRef:
+            name: database-config
+        env:
+        - name: SCHEDULING_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: transport-secrets
+              key: SCHEDULING_DB_PASSWORD
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduling-service
+  namespace: transport-system
+spec:
+  selector:
+    app: scheduling-service
+  ports:
+  - port: 8091
+    targetPort: 8091
+  type: ClusterIP
+
+---
+# Tracking Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-service
+  namespace: transport-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tracking-service
+  template:
+    metadata:
+      labels:
+        app: tracking-service
+    spec:
+      containers:
+      - name: tracking-service
+        image: transport/tracking-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8092
+        envFrom:
+        - configMapRef:
+            name: transport-config
+        - configMapRef:
+            name: database-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracking-service
+  namespace: transport-system
+spec:
+  selector:
+    app: tracking-service
+  ports:
+  - port: 8092
+    targetPort: 8092
+  type: ClusterIP
+
+---
+# Notification Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: transport-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: transport/notification-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8095
+        envFrom:
+        - configMapRef:
+            name: transport-config
+        - configMapRef:
+            name: database-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: transport-system
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 8095
+    targetPort: 8095
+  type: ClusterIP
